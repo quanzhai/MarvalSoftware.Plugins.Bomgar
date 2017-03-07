@@ -1,0 +1,24 @@
+﻿{
+  "Name": "MarvalSoftware.Bomgar",
+  "Organisation": "MarvalSoftware",
+  "DisplayName": "Bomgar Integration",
+  "Icon": "img/bomgar_16.png",
+  "Version": "1.0.0",
+  "SupportedVersions": [
+    "14.4.0",
+    "0.0.0"
+  ],
+  "Pages": [
+    "request.aspx"
+  ],
+  "HtmlImportFile": "MarvalSoftware.Plugins.Bomgar.html",
+  "TagName": "marval-software-plugins-bomgar",
+  "GlobalSettings": [
+    "BomgarHost",
+    "BomgarPort",
+    "BomgarCompany",
+    "BomgarUsername",
+    "BomgarPassword",
+    "MSMAPIKey"
+  ]
+}

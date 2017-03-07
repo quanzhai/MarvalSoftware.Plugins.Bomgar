@@ -1,0 +1,233 @@
+﻿<script type="text/javascript" src="template.js"></script>
+<template>
+    <style>
+        .MarvalSoftware-Bomgar
+        {
+            color: #FF5500;
+        }
+
+        .MarvalSoftware-Bomgar > .logo 
+        {
+            height: 42px;
+            width: 100px;
+            margin: auto;
+            background-repeat: no-repeat;
+        }
+
+        .MarvalSoftware-Bomgar > .container 
+        {
+            display: block;
+            height: 60px;
+            top: 50px;
+            bottom: 82px;
+            left: 10px;
+            right: 10px;
+            overflow: auto;
+            background: no-repeat center center;
+        }
+
+        .MarvalSoftware-Bomgar > .container > .row 
+        {
+            display: table-row;
+        }
+
+        .MarvalSoftware-Bomgar > .container > .row > div 
+        {
+            display: table-cell;
+            padding: 4px;
+        }
+
+        .MarvalSoftware-Bomgar > .container > .row > div > p 
+        {
+            margin-left: 5px;
+            font-weight: bold;
+        }
+
+    </style>
+    <div class="MarvalSoftware-Bomgar">
+        <div class="logo"></div>
+        <div class="container"></div>
+    </div>
+</template>
+
+<template class="sessionTemplate">
+    <div class="row">
+        <div>
+            <p>Session Key:</p>
+        </div>
+        <div>
+            <span class="key"></span>
+        </div>
+    </div>
+    <div class="row">
+        <div>
+            <p>Session URL:</p>
+        </div>
+        <div>
+            <span><a class="url"></a></span>
+        </div>
+    </div>
+</template>
+
+<template class="errorTemplate">
+    <style>
+        .MarvalSoftware-Bomgar-Errors h3,
+        .MarvalSoftware-Bomgar-Errors h4 
+        {
+            padding: 8px 0 8px 0;
+        }
+
+        .jiraConfig > li 
+        {
+            display: none;
+        }
+    </style>
+    <div class="MarvalSoftware-Bomgar-Errors">
+        <div class="title">
+            <h3>Ensure all configuration settings are correct.</h3>
+        </div>
+        <div>
+            <ul class="bomgarConfig">
+                <li id="bomgarHost"> Bomgar Host </li>
+                <li id="bomgarPort"> Bomgar Port </li>
+                <li id="bomgarCompany"> Bomgar Company </li>
+                <li id="bomgarUsername"> Bomgar Username </li>
+                <li id="bomgarPassword"> Bomgar Password</li>
+            </ul>
+            <h4></h4>
+        </div>
+    </div>
+</template>
+
+<script>
+     (function () {
+
+         var MarvalSoftware = window.top.MarvalSoftware;
+         var $ = window.top.$;
+         MarvalSoftware.Plugins.define("marval-software-plugins-bomgar",
+         {
+             _sessionElement: null,
+
+             init: function () {
+                 this._requestNumber = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getRequestNumber();
+                 if (this._requestNumber) {
+                     this._setUpQuickMenu();
+                 }
+             },
+
+             _setUpQuickMenu: function () {
+                 var styleElement = window.top.document.createElement("style");
+                 window.top.document.body.appendChild(styleElement);
+                 styleElement.sheet.insertRule(".MarvalSoftware-Bomgar-quick-menu-item { background-image: url(" + this._getPluginPath() + "img/bomgar_32.png); }", 0);
+
+                 var quickMenuId = window.top.document.querySelector(".quickMenu").id;
+                 var quickMenu = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getControl(quickMenuId);
+                 quickMenu.addMenuItem({
+                     Identifier: "MarvalSoftware-Bomgar",
+                     Label: "Bomgar",
+                     HRef: "javascript:void(0);",
+                     CssClass: "MarvalSoftware-Bomgar-quick-menu-item"
+                 });
+                 quickMenu.onMenuItemClicked.subscribe(function (sender, e) {
+                     if (e.menuItem.getIdentifier() === "MarvalSoftware-Bomgar") {
+                         this._preRequisiteCheck();
+                     }
+                 }, this);
+             },
+            
+             _preRequisiteCheck: function (sender, e) {
+                 $.ajax({
+                    type: "GET",
+                    url: this._getPluginPath() + "handler/ApiHandler.ashx?action=PreRequisiteCheck",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (result) {
+                        if (Object.keys(result).length > 0) {
+                            this._errorPopup(result);
+                        }
+                        else {
+                            this._popup();
+                        }
+                    }.bind(this)
+                });
+            },
+
+             _getPluginPath: function () {
+                 return this.attributes["data-pluginpath"].value;
+             },
+
+             _popup: function () {
+                 if (!this._pluginWindow) {
+                     this._pluginWindow = new MarvalSoftware.UI.Window({
+                         appendToElement: window.top.document.getElementById("aspnetForm"),
+                         title: "Remote Desktop Session",
+                         height: 130,
+                         width: 500,
+                         bodyElement: this,
+                         isResizable: false,
+                         isMaximizable: false
+                     });
+                     this._renderElement();
+                     this._generateSession();
+                 }
+
+                 if (!this._pluginWindow.isVisible()) {
+                     this._pluginWindow.centerToViewport();
+                 }
+                 this._pluginWindow.show();
+             },
+
+            _errorPopup: function (result) {
+                var errorTemplate = document.querySelector('.errorTemplate').content;
+                var errorMessages = window.top.document.importNode(errorTemplate, true);
+                if (result) {
+                    for (var item in result) {
+                        var id = "#" + item;
+                        errorMessages.querySelector(id).style.display = "block";
+                    }
+                    errorMessages.querySelector('div > h3').textContent = "The following settings have not been configured:";
+                    errorMessages.querySelector('div > h4').textContent = "Please add these via the plugin page";
+                }
+                MarvalSoftware.UI.MessageBox.show(
+                    "Invalid Bomgar Configuration",
+                    errorMessages,
+                    MarvalSoftware.UI.MessageBox.Types.ERROR,
+                    [MarvalSoftware.UI.MessageBox.Buttons.OK],
+                    MarvalSoftware.UI.MessageBox.Buttons.OK,
+                    450
+                 );
+            },
+
+             _renderElement: function () {
+                 var template = document.querySelector('template').content;
+                 this._element = window.top.document.importNode(template, true);
+                 this._sessionElement = this._element.querySelector('.container');
+                 this._element.querySelector('.logo').style.backgroundImage = "url(" + this._getPluginPath() + "img/logo.png)";
+                 this._sessionElement.style.backgroundImage = "url(" + this._getPluginPath() + "img/spinner.gif)";
+                 this.appendChild(this._element);
+             },
+
+             _renderSession: function (result) {
+                 this._sessionElement.style.backgroundImage = ""
+                 var sessionTemplate = document.querySelector('.sessionTemplate').content;
+                 var sessionElement = window.top.document.importNode(sessionTemplate, true);
+                 sessionElement.querySelector('.key').textContent = result.session_key.short_key
+                 sessionElement.querySelector('.url').textContent = result.session_key.key_url
+                 sessionElement.querySelector('.url').href = "javascript:void(0)"
+                 this._sessionElement.appendChild(sessionElement);
+             },
+
+             _generateSession: function () {
+                 $.ajax({
+                     type: "GET",
+                     url: this._getPluginPath() + "handler/ApiHandler.ashx?action=StartBomgarSession&requestNumber=" + this._requestNumber,
+                     contentType: "application/json; charset=utf-8",
+                     dataType: "json",
+                     success: function (result) {
+                         this._renderSession(result);
+                     }.bind(this)
+                 });
+             },
+         });
+     })();
+</script>
