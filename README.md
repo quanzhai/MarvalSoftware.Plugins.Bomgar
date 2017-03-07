@@ -6,9 +6,9 @@ Notes are added to the MSM request at the start and end of Bomgar sessions, on s
 
 ## Compatible Versions
 
-| Plugin  | MSM         | JIRA     |
-|---------|-------------|----------|
-| 1.0.0   | 14.4.0.#### | v7+      |
+| Plugin  | MSM    | JIRA     |
+|---------|--------|----------|
+| 1.0.0   | 14.4.0 | v7+      |
 
 ## Installation
 
